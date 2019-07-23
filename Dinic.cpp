@@ -1,52 +1,104 @@
 #include <bits/stdc++.h>
 using namespace std;
 /*
-x % m == C[i] == [0 .... m - 1] 
-vector<int>[] <- 对应的编号放进去
-1.如果已经满足了，就没有必要去变化
-2.从小的变化为大的肯定是优秀的
-
-把多的对应丢到vector<pair<int, int>>
-
-*/
-const int MAXN = 2 * 1e5 + 5;
-int arr[MAXN];
-queue<int>vec[MAXN];
+Dinic算法：
+解决最大流最小割问题
+复杂度O(m * sqrt(n))
+ */
+const int inf = 0x7fffffff;
+const int MAXN = 1005;
+const int MAXM = 10005;
+int n, m;
+struct Dinic{
+    int tot, s, t, maxflow;
+    int head[MAXN];
+    struct NODE{
+        int u, v, w, next;
+    }arr[MAXM << 1];
+    void Edge_Init(){
+        memset(head, -1, sizeof(head));
+        memset(arr, 0, sizeof(arr));
+        tot = 0;
+    }
+    void add(int u, int v, int w){
+        arr[tot].u = u, arr[tot].v = v, arr[tot].w = w;
+        arr[tot].next = head[u];
+        head[u] = tot;
+        tot ++; 
+    }
+    void Dinic_add(int u, int v, int w){
+        add(u, v, w);
+        add(v, u, 0);
+    }
+    int dist[MAXN];
+    void Dinic_Init(){
+        maxflow = 0;
+        memset(dist, 0, sizeof(dist));
+    }
+    bool bfs(){///在图上构造分层图
+        memset(dist, 0, sizeof(dist));
+        queue<int>que;
+        while(!que.empty()) que.pop();
+        que.push(s);
+        dist[s] = 1;
+        while(!que.empty()){
+            int x = que.front(); que.pop();
+            for(int i = head[x]; ~i; i = arr[i].next){
+                if(arr[i].w && !dist[arr[i].v]){
+                    que.push(arr[i].v);
+                    dist[arr[i].v] = dist[x] + 1;
+                    if(arr[i].v == t){
+                        return true;
+                    }
+                }
+            }
+        } 
+        return false;
+    }
+    int dfs(int x, int flow){
+        if(x == t){
+            return flow;
+        }
+        int rest = flow, k;
+        for(int i = head[x]; ~i; i = arr[i].next){
+            if(arr[i].w && dist[arr[i].v] == dist[x] + 1){
+                k = dfs(arr[i].v, min(rest, arr[i].w));
+                if(!k) dist[arr[i].v] = 0;
+                arr[i].w -= k;
+                arr[i ^ 1].w += k;
+                rest -= k;
+            }
+        }
+        return flow - rest;
+    }
+    int dinic_algorithm(){
+        int flows = 0;
+        while(bfs()){
+            while(flows = dfs(s, inf)){
+                maxflow += flows;
+            }
+        }
+        return maxflow;
+    }
+}dc;
 int main(){
-    int n, m;
+    int t, step;
     ios::sync_with_stdio(false);
-    cin >> n >> m;
-    for(int i = 0; i < n; i ++){
-        cin >> arr[i];
-        vec[arr[i] % m].push(i);///vec - 编号
-    }
-    vector<pair<int, int> >vecs;
-    long long re = 0;
-    for(int i = 0; i < 2 * m; i ++){
-        int num = i % m;
-        while(vec[num].size() > n / m){
-           int x = vec[num].front();
-           vec[num].pop();
-           vecs.push_back(make_pair(x, i));
+    cin >> t;
+    step = 0;
+    while(t --){
+        int n, m;
+        cin >> n >> m;
+        dc.Dinic_Init();
+        dc.Edge_Init();
+        dc.s = 1, dc.t = n;
+        for(int i = 0; i < m; i ++){
+            int u, v, w;
+            cin >> u >> v >> w;
+            dc.Dinic_add(u, v, w);
         }
-        while(vec[num].size() < n / m && !vecs.empty()){
-            pair<int, int>temp = vecs.back();
-            vecs.pop_back();
-            if(temp.second < num){
-                re += (num - temp.second);
-                arr[temp.first] += (num - temp.second);
-            }
-            else{
-                re += (num - temp.second + m);
-                arr[temp.first] += (num - temp.second + m);
-            }
-            vec[num].push(temp.first);
-        }
+        int re = dc.dinic_algorithm();
+        cout << "Case " << ++ step << ": " << re << endl;
     }
-    cout << re << endl;
-    for(int i = 0; i < n; i ++){
-        cout << arr[i] << " ";
-    }
-    cout << endl;
     return 0;
 }
