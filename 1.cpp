@@ -1,97 +1,106 @@
 #include <bits/stdc++.h>
 using namespace std;
-/*
-Dinic算法：
-解决最大流最小割问题
-复杂度O(m * sqrt(n))
- */
-const int inf = 0x7fffffff;
-const int MAXN = 10005;
-const int MAXM = 100005;
-int n, m;
-struct Dinic{
-    int tot, s, t, maxflow;
-    int head[MAXN];
-    struct NODE{
-        int u, v, w, next;
-    }arr[MAXM << 1];
-    void Edge_Init(){
-        memset(head, -1, sizeof(head));
-        memset(arr, 0, sizeof(arr));
-        tot = 0;
+const int MAXN = 1e5 + 5;
+vector<int> vec;
+int gets(int x) {
+    return lower_bound(vec.begin(), vec.end(), x) - vec.begin() + 1;
+}
+struct Segment_forest {
+    int root[MAXN];
+    struct NODE {
+        int l, r, sum;
+    } segtree[MAXN * 20];
+    int tot;
+    int build(int l, int r)  /// return p p的值是点的坐标
+    {
+        int p = ++tot;
+        segtree[p].sum = 0;
+        if (l == r) {
+            /**
+             一层一层的返回就对了。。。。。。
+             返回这个节点的坐标就对了。。。。。
+             然后才能实现 l r 的指向
+             **/
+            return p;  ///返回指向
+        }
+        int mid = (l + r) >> 1;
+        segtree[p].l = build(l, mid);
+        segtree[p].r = build(mid + 1, r);
+        return p;
     }
-    void add(int u, int v, int w){
-        arr[tot].u = u, arr[tot].v = v, arr[tot].w = w;
-        arr[tot].next = head[u];
-        head[u] = tot;
-        tot ++; 
+    int update(int now, int l, int r, int pos, int val)
+    /**
+     now - 当前节点 pos - 指要更新的点 val - 权值
+     每次更新，都会创建一条链，所以得更新tot
+     **/
+    {
+        int p = ++tot;
+        segtree[p] = segtree[now];  ///这样会将上一个的点
+        ///的值赋值给当前的点，这样不需要修改的那棵子树的连接
+        ///这样每次多生成的一颗线段树，只要多一条链，所以节省了空间
+        if (l == r) {
+            segtree[p].sum += val;  ///如果每次更新到底的话，那么就更新底的值
+            return p;
+        }
+        int mid = (l + r) >> 1;
+        if (pos <= mid)  ///如果增加的点 < mid 那么肯定可以往左子树移动
+        {
+            segtree[p].l = update(segtree[p].l, l, mid, pos, val);
+        } else  ///否则向右子树移动
+        {
+            segtree[p].r = update(segtree[p].r, mid + 1, r, pos, val);
+        }
+        segtree[p].sum = segtree[segtree[p].l].sum + segtree[segtree[p].r].sum;
+        return p;
     }
-    void Dinic_add(int u, int v, int w){
-        add(u, v, w);
-        add(v, u, 0);
+    int query(int p, int q, int l, int r, int k) {
+        if (l == r) return l;  ///查询到底就输出
+        int mid = (l + r) >> 1;
+        int cnt = segtree[segtree[p].l].sum - segtree[segtree[q].l].sum;
+        ///将两棵树相减，可得要的状态
+        if (k <= cnt)  /// k 即为第k小，那么就是查询第k小，判断个数再进行移动
+        {
+            return query(segtree[p].l, segtree[q].l, l, mid, k);
+        } else {
+            return query(segtree[p].r, segtree[q].r, mid + 1, r, k - cnt);
+        }
     }
-    int dist[MAXN];
-    void Dinic_Init(){
-        maxflow = 0;
-        memset(dist, 0, sizeof(dist));
-    }
-    bool bfs(){///在图上构造分层图
-        memset(dist, 0, sizeof(dist));
-        queue<int>que;
-        while(!que.empty()) que.pop();
-        que.push(s);
-        dist[s] = 1;
-        while(!que.empty()){
-            int x = que.front(); que.pop();
-            for(int i = head[x]; ~i; i = arr[i].next){
-                if(arr[i].w && !dist[arr[i].v]){
-                    que.push(arr[i].v);
-                    dist[arr[i].v] = dist[x] + 1;
-                    if(arr[i].v == t){
-                        return true;
+} tree;
+int arr[MAXN];
+int main() {
+    int n, q;
+    //freopen("C:/Users/user/Desktop/1011.in", "r", stdin);
+    //freopen("C:/Users/user/Desktop/1011.myout", "w", stdout);
+    while (~scanf("%d%d", &n, &q)) {
+        vec.clear();
+        tree.tot = 0;
+        for (int i = 0; i < n; i++) {
+            scanf("%d", &arr[i]);
+            vec.push_back(arr[i]);
+        }
+        sort(vec.begin(), vec.end());
+        vec.erase(unique(vec.begin(), vec.end()), vec.end());
+        tree.root[0] = tree.build(1, n);
+        for(int i = 0; i < n; i ++){
+            tree.root[i + 1] = tree.update(tree.root[i], 1, n, gets(arr[i]), 1);
+        }
+        for(int i = 0; i < q; i ++){
+            int l, r;
+            scanf("%d%d", &l, &r);
+            vector<long long>re;
+            re.clear();
+            long long result = -1;
+            for(int j = 0; j < min(47, r - l + 1); j ++){
+                re.push_back(vec[tree.query(tree.root[r], tree.root[l - 1], 1, n, r - l + 1 - j) - 1]);
+                if(re.size() >= 3){
+                    if(re[j - 2] < re[j - 1] + re[j]){
+                        result = re[j] + re[j - 1] + re[j - 2];
+                        break;
                     }
                 }
             }
-        } 
-        return false;
-    }
-    int dfs(int x, int flow){
-        if(x == t){
-            return flow;
+            printf("%lld\n", result);
         }
-        int rest = flow, k;
-        for(int i = head[x]; ~i; i = arr[i].next){
-            if(arr[i].w && dist[arr[i].v] == dist[x] + 1){
-                k = dfs(arr[i].v, min(rest, arr[i].w));
-                if(!k) dist[arr[i].v] = 0;
-                arr[i].w -= k;
-                arr[i ^ 1].w += k;
-                rest -= k;
-            }
-        }
-        return flow - rest;
     }
-    int dinic_algorithm(){
-        int flows = 0;
-        while(bfs()){
-            while(flows = dfs(s, inf)){
-                maxflow += flows;
-            }
-        }
-        return maxflow;
-    }
-}dc;
-int main(){
-    ios::sync_with_stdio(false);
-    cin >> n >> m >> dc.s >> dc.t;
-    dc.Dinic_Init();
-    dc.Edge_Init();
-    for(int i = 0; i < m; i ++){
-        int u, v, w;
-        cin >> u >> v >> w;
-        dc.Dinic_add(u, v, w);
-    }
-    int re = dc.dinic_algorithm();
-    cout << re << endl;
     return 0;
 }
