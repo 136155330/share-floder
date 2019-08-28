@@ -1,19 +1,8 @@
 #include <bits/stdc++.h>
 using namespace std;
-/*
-what is Tree Chain Partitioning？
-it is a quickly algorithm, and the algorithm can solve the tree's
-the distance between any two points, Realization Principle
-segtree and the dfs, first, the one dfs deal with the the tree problem
-that who's the son's father? Depth of Node ? who is the Heavy Son?
-
-Second , the dfs is handle on the tree's node Renumber, the new num will to
-structure the segtree, that is can Maintain the subtree on the continuity line
-
-the Code Breathtaking long
- */
-const int MAXN = 1e5 + 5;
-int n, m, r, p;
+const int MAXN = 200005;
+int n, m, r;///n - 点的个数 m - 边数 
+const int p = 0x7fffffff; 
 struct EDGE{
     int tot;
     int head[MAXN];
@@ -159,44 +148,30 @@ void SubtreeSum(int x){
 void SubtreeAdd(int x, int val){
     seg.update(1, id[x], id[x] + size[x] - 1, val % p);
 }
+struct LJ{
+    int u, v, w;
+}hzb[200005];
 int main(){
     ios::sync_with_stdio(false);
-    cin >> n >> m >> r >> p;
-    for(int i = 1; i <= n; i ++){
-        cin >> value[i];
-    }
+    cin >> n >> m >> r;
     e.Init();
-    for(int i = 1; i <= n - 1; i ++){
-        int x, y;
-        cin >> x >> y;
-        e.add(x, y);
-        e.add(y, x);
-    }
-    for(int i = 0; i < e.tot; i ++){
-        cout << "i = " << i << " u = " <<  e.arr[i].u << " " << e.arr[i].v << " next = "<<e.arr[i].next<<endl;
+    for(int i = 0; i < n - 1; i ++){
+        cin >> hzb[i].u >> hzb[i].v >> hzb[i].w;
+        e.add(hzb[i].u, hzb[i].v);
     }
     dfs1(r, 0, 1);
     dfs2(r, r);
     seg.build(1, 1, n);
-    for(int i = 0; i < m; i ++){
-        int opt, x, y, z;
-        cin >> opt;
-        if(opt == 1){
-            cin >> x >> y >> z;
-            TreeAdd(x, y, z);
-        }
-        else if(opt == 2){
-            cin >> x >> y;
-            TreeSum(x, y);
-        }
-        else if(opt == 3){
-            cin >> x >> z;
-            SubtreeAdd(x, z);
+    for(int i = 0; i < n - 1; i ++){
+        int xs;
+        if(deep[hzb[i].u] < deep[hzb[i].v]){
+            xs = deep[hzb[i].v];
         }
         else{
-            cin >> x;
-            SubtreeSum(x);
+            xs = deep[hzb[i].u];
         }
+        seg.update(1, id[xs], id[xs], hzb[i].w);
     }
+    
     return 0;
 }

@@ -1,19 +1,11 @@
 #include <bits/stdc++.h>
 using namespace std;
-#pragma GCC optimize(2)
+#pragma GCC optimize(3)
 map<string, int>M;
 int cs;
 string L;
-// list<int>::iterator add(int x, list<int>&LS){
-//     auto be = LS.begin();
-//     for(int i = 0; i < x; i ++)
-//         be ++;
-//     return be; 
-// }
 string solve(string LL, int n, int num){
-    //LL.insert(add(n, LL), num);
     LL.insert(n, 1, num + '0');
-    //cout << LL << "?" << endl;
     char temp;
     int lnum, rnum, lsum, rsum;
     char temps;
@@ -21,8 +13,6 @@ string solve(string LL, int n, int num){
     lsum = 0, rsum = 0;
     while (1) {
         int f = 0;
-        //temp = *(add(lnum, LL));
-        //temps  = *(add(rnum, LL));
         temp = LL[lnum];
         temps = LL[rnum];
         if(temp != temps){
@@ -54,13 +44,17 @@ string solve(string LL, int n, int num){
         for (int i = lnum; i <= rnum; i++) {
             LL[i] = '0';
         }
-        LL.erase(lnum, rnum - lnum + 1);
         lsum = rsum = 0;
         lnum = (lnum - 1 < 0 ? 0 : lnum - 1);
         rnum = (rnum + 1 >= LL.size() ? LL.size() : rnum + 1);
     }
-    //assert(0);
-    return LL;
+    string HZBSTR;
+    for(int i = 0; i < LL.length(); i ++){
+        if(LL[i] != '0'){
+            HZBSTR.push_back(LL[i]);
+        }
+    }
+    return HZBSTR;
 }
 struct BFS_NODE{
     int value;
@@ -93,6 +87,9 @@ int bfs(string LSS){
             for(int j = 1; j <= 3; j ++){
                 en.key = solve(te.key, i, j);
                 en.value = te.value + 1;
+                if(en.key.size() == 0){
+                    return en.value;
+                }
                 if(en.value >= 4 && en.key.size() > 0){
                     continue;
                 }
@@ -116,9 +113,7 @@ int main(){
     cin >> n;
     string str;
     cin >> str;
-    L = str;
-    //cout << L << endl;
-    int re = bfs(L);
+    int re = bfs(str);
     cout << re << endl;
     return 0;
 }
